@@ -1,0 +1,25 @@
+file to ignore while adding to github
+
+/__pycache__
+/cameraServosArduino
+/gesturesDataset
+/Logs
+/TrainingVideosSet1
+/TrainingVideosSet2
+/TrainingVideosSet3
+/two_servos_control
+DatasetCreation.py
+splittingVideos.py
+TrainDontUse.py
+data.npy
+dataTrainingSet1.npy
+dataTrainingSet2.npy
+dataTrainingSet3Pose.npy
+GestureRecognition_2layers.h5
+GestureRecognition_3layers.h5
+GestureRecognition_4layers.h5
+GestureRecognition.h5
+labels.npy
+labelsTrainingSet1.npy
+labelsTrainingSet2.npy
+labelsTrainingSet3Pose.npy

@@ -183,8 +183,8 @@ with open("label2.csv", "r") as file:
 #x2 = np.array(data2)
 
 #for testing uncomment these lines
-x = np.load("data.npy")
-labels = np.load("labels.npy")
+x = np.load("dataTrainingSet3Pose.npy")
+labels = np.load("labelsTrainingSet3Pose.npy")
 print(x.shape)
 
 # uncomment the following line when trainning 
@@ -229,7 +229,7 @@ l1l2=regularizers.L1L2(l1=1e-4, l2=1e-5)
 
 # # model with 1 LSTM Layer
 # model1 = Sequential()
-# model1.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,126)))
+# model1.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,258)))
 # #model.add(LSTM(64,return_sequences=True, activation='relu', input_shape=(40,1662)))
 # #model.add(LSTM(64,return_sequences=True,kernel_regularizer= l2,  activation='elu'))
 # # model1.add(LSTM(32,return_sequences=False,kernel_regularizer= l2, activation='elu'))
@@ -272,7 +272,7 @@ l1l2=regularizers.L1L2(l1=1e-4, l2=1e-5)
 
 # model with 2 LSTM Layer
 model2 = Sequential()
-model2.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,126)))
+model2.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,258)))
 #model.add(LSTM(64,return_sequences=True, activation='relu', input_shape=(40,1662)))
 #model.add(LSTM(64,return_sequences=True,kernel_regularizer= l2,  activation='elu'))
 model2.add(LSTM(32,return_sequences=False,kernel_regularizer= l2, activation='elu'))
@@ -289,7 +289,7 @@ history = model2.fit(x_train, y_train, epochs=40,  validation_data = (x_test,y_t
 model2.save('GestureRecognition_2layers.h5')
 
 fig, (axis1,axis2,axis3) = plt.subplots(nrows=3,ncols=1,sharex=True)
-axis1.set_title("Accuracy for hand gesture detection using LSTM")
+axis1.set_title("Training and Validation Accuracy for 2, 3, and 4 LSTM Layers")
 axis1.plot(history.history["categorical_accuracy"], label="2Layers_accuracy  ")
 axis1.plot(history.history["val_categorical_accuracy"], label="2Layers_val_accuracy")
 axis1.set_ylabel("Accuracy")
@@ -313,7 +313,7 @@ axis1.text(0,0.8,'Accuracy = %.2f' %accuracy_score(ytrue,yhat))
 
 # model with 3 LSTM Layer
 model3 = Sequential()
-model3.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,126)))
+model3.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,258)))
 #model.add(LSTM(64,return_sequences=True, activation='relu', input_shape=(40,1662)))
 model3.add(LSTM(64,return_sequences=True,kernel_regularizer= l2,  activation='elu'))
 model3.add(LSTM(32,return_sequences=False,kernel_regularizer= l2, activation='elu'))
@@ -353,7 +353,7 @@ axis2.text(0,0.8,'Accuracy = %.2f' %accuracy_score(ytrue,yhat))
 
 #model with 4 LSTM layer
 model4 = Sequential()
-model4.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,126)))
+model4.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,258)))
 #model.add(LSTM(64,return_sequences=True, activation='relu', input_shape=(40,1662)))
 model4.add(LSTM(64,return_sequences=True,kernel_regularizer= l2,  activation='elu'))
 model4.add(LSTM(32,return_sequences=True,kernel_regularizer= l2, activation='elu'))
@@ -391,4 +391,4 @@ print(accuracy_score(ytrue,yhat))
 print({name: accuracy_score(np.array(ytrue) == i, np.array(yhat) == i) for i, name in enumerate(controlActions)})
 axis3.text(0,0.8,'Accuracy = %.2f' %accuracy_score(ytrue,yhat))
 
-plt.savefig("HandLandmark_1Ex5.png",dpi=200)
+plt.savefig("poseLandmark_1Ex5.png",dpi=200)
