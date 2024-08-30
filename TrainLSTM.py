@@ -1,5 +1,6 @@
 from sklearn.metrics import multilabel_confusion_matrix, accuracy_score
 from sklearn.model_selection import train_test_split
+from sklearn import preprocessing
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
@@ -18,10 +19,6 @@ plt.style.use("ggplot")
 plt.figure(figsize=(10,10))
 maxInt = sys.maxsize
 
-def show_shapes(): # can make yours to take inputs; this'll use local variable values
-    print("Expected: (num_samples, timesteps, channels)")
-    print("Sequences: {}".format(Sequences.shape))
-    print("Targets:   {}".format(Targets.shape))  
 
 def vidLength(file_path):
 
@@ -109,8 +106,8 @@ for action in controlActions:
                         rightHand = np.array(rightHand).flatten()
                         face = np.array(face).flatten()
                         #allKeypoints = np.concatenate([pose,leftHand,rightHand,face])
-                        # allKeypoints = np.concatenate([pose,leftHand,rightHand])
-                        allKeypoints = np.concatenate([leftHand,rightHand])
+                        allKeypoints = np.concatenate([pose,leftHand,rightHand])
+                        # allKeypoints = np.concatenate([leftHand,rightHand])
                         window.append(allKeypoints)
 
                     elif frame_count > fps_threshold:
@@ -139,7 +136,7 @@ for action in controlActions:
 
             x = np.array(data)
             print(x.shape)
-'''                      
+'''                   
 
 print("Finished Loading data")
 
@@ -182,16 +179,22 @@ with open("label2.csv", "r") as file:
 
 #x2 = np.array(data2)
 
-#for testing uncomment these lines
-x = np.load("dataTrainingSet3Pose.npy")
-labels = np.load("labelsTrainingSet3Pose.npy")
+# for testing uncomment these lines
+x = np.load("dataHandBigDataset.npy")
+print(x.shape)
+# print(x[0][1])
+# data preprocessing
+# source: https://stackoverflow.com/questions/64345922/how-to-normalize-a-specific-dimension-of-a-3d-array
+scaler = preprocessing.MinMaxScaler()
+x = scaler.fit_transform(x.reshape(x.shape[0],-1)).reshape(x.shape)
+labels = np.load("labelsHandBigDataset.npy")
 print(x.shape)
 
 # uncomment the following line when trainning 
 
 # x = np.array(data)
-# np.save("data.npy",x)
-# np.save("labels.npy",labels)
+# np.save("dataPoseHandLargeDataset.npy",x)
+# np.save("labelsPoseHandLargeDataset.npy",labels)
 # print(x.shape)
 
 
@@ -210,15 +213,22 @@ print(x.shape)
 y = to_categorical(labels).astype(int) #converting to onehot encoded
 print(y.shape)
 
-x_train, x_test, y_train, y_test = train_test_split(x,y, test_size=0.3) #splittingdata for train and testing
+x_train, x_test, y_train, y_test = train_test_split(x,y, test_size=0.3,shuffle=True) #splittingdata for train and testing
+
+
+
+# splitting train into validation set by 10%
+valSet = x_train.shape[0] - int(x_train.shape[0] * 0.2)
+x_train,x_val = x_train[:valSet],x_train[valSet:]
+y_train,y_val = y_train[:valSet],y_train[valSet:]
 
 print("checking x-trian and y-train")
-print(type(x_train))
-print(type(y_train))
+print("x_train size = ",x_train.shape)
+print("y_train size=",y_train.shape)
+print("x_val size = ",x_val.shape)
+print("y_val size=",y_val.shape)
 
-Sequences = np.asarray(x_train)
-Targets   = np.asarray(y_train)
-show_shapes()
+
 
 #creating log files for visualization  from Tensor boards(dashboard)
 log_dir = os.path.join('Logs')
@@ -229,20 +239,20 @@ l1l2=regularizers.L1L2(l1=1e-4, l2=1e-5)
 
 # # model with 1 LSTM Layer
 # model1 = Sequential()
-# model1.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,258)))
+# model1.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='relu', input_shape=(28,126)))
 # #model.add(LSTM(64,return_sequences=True, activation='relu', input_shape=(40,1662)))
-# #model.add(LSTM(64,return_sequences=True,kernel_regularizer= l2,  activation='elu'))
-# # model1.add(LSTM(32,return_sequences=False,kernel_regularizer= l2, activation='elu'))
-# #model.add(Dense(64,kernel_regularizer= l2, activation='elu'))
-# model1.add(Dense(32,kernel_regularizer= l2, activation='elu'))
+# #model.add(LSTM(64,return_sequences=True,kernel_regularizer= l2,  activation='relu'))
+# # model1.add(LSTM(32,return_sequences=False,kernel_regularizer= l2, activation='relu'))
+# #model.add(Dense(64,kernel_regularizer= l2, activation='relu'))
+# model1.add(Dense(32,kernel_regularizer= l2, activation='relu'))
 # model1.add(Dense(controlActions.shape[0], activation='softmax'))
 
 # model1.summary()
-# adam =Adam(learning_rate=0.00001)
+# adam =Adam(learning_rate=0.0001)
 # model1.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
 # print("Starting Training ...")
-# history = model1.fit(x_train, y_train, epochs=40,  validation_data = (x_test,y_test) ,callbacks=[tb_callback])
+# history = model1.fit(x_train, y_train, epochs=40,  validation_data = (x_val,y_val) ,callbacks=[tb_callback])
 # model1.save('GestureRecognition_1layers.h5')
 
 # plt.plot(history.history["accuracy"], label="2Layers_Train_accuracy  ")
@@ -272,29 +282,29 @@ l1l2=regularizers.L1L2(l1=1e-4, l2=1e-5)
 
 # model with 2 LSTM Layer
 model2 = Sequential()
-model2.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,258)))
+model2.add(LSTM(300,return_sequences=True,kernel_regularizer= l2, activation='relu', input_shape=(28,126)))
 #model.add(LSTM(64,return_sequences=True, activation='relu', input_shape=(40,1662)))
-#model.add(LSTM(64,return_sequences=True,kernel_regularizer= l2,  activation='elu'))
-model2.add(LSTM(32,return_sequences=False,kernel_regularizer= l2, activation='elu'))
-#model.add(Dense(64,kernel_regularizer= l2, activation='elu'))
-model2.add(Dense(32,kernel_regularizer= l2, activation='elu'))
+#model.add(LSTM(64,return_sequences=True,kernel_regularizer= l2,  activation='relu'))
+model2.add(LSTM(120,return_sequences=False,kernel_regularizer= l2, activation='relu'))
+#model.add(Dense(64,kernel_regularizer= l2, activation='relu'))
+model2.add(Dense(64,kernel_regularizer= l2, activation='relu'))
 model2.add(Dense(controlActions.shape[0], activation='softmax'))
 
 model2.summary()
-adam =Adam(learning_rate=0.00001)
+adam =Adam(learning_rate=0.0001)
 model2.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
 print("Starting Training ...")
-history = model2.fit(x_train, y_train, epochs=40,  validation_data = (x_test,y_test) ,callbacks=[tb_callback])
+history = model2.fit(x_train, y_train, epochs=40,  validation_data = (x_val,y_val) ,callbacks=[tb_callback])
 model2.save('GestureRecognition_2layers.h5')
 
 fig, (axis1,axis2,axis3) = plt.subplots(nrows=3,ncols=1,sharex=True)
-axis1.set_title("Training and Validation Accuracy for 2, 3, and 4 LSTM Layers")
-axis1.plot(history.history["categorical_accuracy"], label="2Layers_accuracy  ")
-axis1.plot(history.history["val_categorical_accuracy"], label="2Layers_val_accuracy")
+# axis1.set_title("Training and Validation Accuracy for 2, 3, and 4 LSTM Layers")
+axis1.plot(history.history["categorical_accuracy"], label="Training  ")
+axis1.plot(history.history["val_categorical_accuracy"], label="Validation")
 axis1.set_ylabel("Accuracy")
-axis1.set_ylim([0.0, 1.2])
-axis1.legend(loc="lower right")
+axis1.set_ylim([0.0, 1.4])
+
 
 
 
@@ -308,32 +318,34 @@ print("Accuracy metrics for  2 layer LSTM")
 print(multilabel_confusion_matrix(ytrue,yhat))
 print(accuracy_score(ytrue,yhat))
 print({name: accuracy_score(np.array(ytrue) == i, np.array(yhat) == i) for i, name in enumerate(controlActions)})
-axis1.text(0,0.8,'Accuracy = %.2f' %accuracy_score(ytrue,yhat))
+axis1.text(27,1.1,'Test Accuracy = %.2f' %accuracy_score(ytrue,yhat))
+axis1.text(20,0.1,'(a)')
+axis1.legend(bbox_to_anchor=(1.25,0.5),loc="center right", borderaxespad=0.)
 
 
 # model with 3 LSTM Layer
 model3 = Sequential()
-model3.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,258)))
+model3.add(LSTM(300,return_sequences=True,kernel_regularizer= l2, activation='relu', input_shape=(28,126)))
 #model.add(LSTM(64,return_sequences=True, activation='relu', input_shape=(40,1662)))
-model3.add(LSTM(64,return_sequences=True,kernel_regularizer= l2,  activation='elu'))
-model3.add(LSTM(32,return_sequences=False,kernel_regularizer= l2, activation='elu'))
-#model.add(Dense(64,kernel_regularizer= l2, activation='elu'))
-model3.add(Dense(32,kernel_regularizer= l2, activation='elu'))
+model3.add(LSTM(120,return_sequences=True,kernel_regularizer= l2,  activation='relu'))
+model3.add(LSTM(64,return_sequences=False,kernel_regularizer= l2, activation='relu'))
+#model.add(Dense(64,kernel_regularizer= l2, activation='relu'))
+model3.add(Dense(32,kernel_regularizer= l2, activation='relu'))
 model3.add(Dense(controlActions.shape[0], activation='softmax'))
 
 model3.summary()
-adam =Adam(learning_rate=0.00001)
+adam =Adam(learning_rate=0.0001)
 model3.compile(optimizer=adam, loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
 print("Starting Training ...")
-history = model3.fit(x_train, y_train, epochs=40,  validation_data = (x_test,y_test) ,callbacks=[tb_callback])
+history = model3.fit(x_train, y_train, epochs=40, validation_data = (x_val,y_val) ,callbacks=[tb_callback])
 model3.save('GestureRecognition_3layers.h5')
 
-axis2.plot(history.history["categorical_accuracy"], label="3Layers_accuracy  ")
-axis2.plot(history.history["val_categorical_accuracy"], label="3Layers_val_accuracy")
+axis2.plot(history.history["categorical_accuracy"])
+axis2.plot(history.history["val_categorical_accuracy"])
 axis2.set_ylabel("Accuracy")
-axis2.set_ylim([0.0, 1.2])
-axis2.legend(loc="lower right")
+axis2.set_ylim([0.0, 1.4])
+
 
 
 
@@ -347,35 +359,36 @@ print("Accuracy metrics for  3 layer LSTM")
 print(multilabel_confusion_matrix(ytrue,yhat))
 print(accuracy_score(ytrue,yhat))
 print({name: accuracy_score(np.array(ytrue) == i, np.array(yhat) == i) for i, name in enumerate(controlActions)})
-axis2.text(0,0.8,'Accuracy = %.2f' %accuracy_score(ytrue,yhat))
+axis2.text(27,1.1,'Test Accuracy = %.2f' %accuracy_score(ytrue,yhat))
+axis2.text(20,0.1,'(b)')
 
 
 
 #model with 4 LSTM layer
 model4 = Sequential()
-model4.add(LSTM(128,return_sequences=True,kernel_regularizer= l2, activation='elu', input_shape=(28,258)))
+model4.add(LSTM(300,return_sequences=True,kernel_regularizer= l2, activation='relu', input_shape=(28,126)))
 #model.add(LSTM(64,return_sequences=True, activation='relu', input_shape=(40,1662)))
-model4.add(LSTM(64,return_sequences=True,kernel_regularizer= l2,  activation='elu'))
-model4.add(LSTM(32,return_sequences=True,kernel_regularizer= l2, activation='elu'))
-model4.add(LSTM(16,return_sequences=False,kernel_regularizer= l2, activation='elu'))
-#model.add(Dense(64,kernel_regularizer= l2, activation='elu'))
-model4.add(Dense(16,kernel_regularizer= l2, activation='elu'))
+model4.add(LSTM(120,return_sequences=True,kernel_regularizer= l2,  activation='relu'))
+model4.add(LSTM(64,return_sequences=True,kernel_regularizer= l2, activation='relu'))
+model4.add(LSTM(32,return_sequences=False,kernel_regularizer= l2, activation='relu'))
+#model.add(Dense(64,kernel_regularizer= l2, activation='relu'))
+model4.add(Dense(16,kernel_regularizer= l2, activation='relu'))
 model4.add(Dense(controlActions.shape[0], activation='softmax'))
 
 model4.summary()
-adam2 =Adam(learning_rate=0.00001)
+adam2 =Adam(learning_rate=0.0001)
 model4.compile(optimizer=adam2, loss='categorical_crossentropy', metrics=['categorical_accuracy'])
 
 print("Starting Training ...")
-history = model4.fit(x_train, y_train, epochs=40,  validation_data = (x_test,y_test) ,callbacks=[tb_callback])
+history = model4.fit(x_train, y_train, epochs=40,  validation_data = (x_val,y_val) ,callbacks=[tb_callback])
 model4.save('GestureRecognition_4layers.h5')
 
-axis3.plot(history.history["categorical_accuracy"], label="4Layers_accuracy  ")
-axis3.plot(history.history["val_categorical_accuracy"], label="4Layers_val_accuracy")
+axis3.plot(history.history["categorical_accuracy"])
+axis3.plot(history.history["val_categorical_accuracy"])
 axis3.set_xlabel("Epoch")
 axis3.set_ylabel("Accuracy")
-axis3.set_ylim([0.0, 1.2])
-axis3.legend(loc="lower right")
+axis3.set_ylim([0.0, 1.4])
+# axis3.legend(loc="lower right")
 
 
 
@@ -389,6 +402,7 @@ print("Accuracy metrics for  4 layer LSTM")
 print(multilabel_confusion_matrix(ytrue,yhat))
 print(accuracy_score(ytrue,yhat))
 print({name: accuracy_score(np.array(ytrue) == i, np.array(yhat) == i) for i, name in enumerate(controlActions)})
-axis3.text(0,0.8,'Accuracy = %.2f' %accuracy_score(ytrue,yhat))
+axis3.text(27,1.1,'Test Accuracy = %.2f' %accuracy_score(ytrue,yhat))
+axis3.text(20,0.1,'(c)')
 
-plt.savefig("poseLandmark_1Ex5.png",dpi=200)
+plt.savefig("HandLandmark_1Ex4_1.png",dpi=250, bbox_inches='tight')
